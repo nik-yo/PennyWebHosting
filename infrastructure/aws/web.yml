@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  WebS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: awskcug-web
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        ErrorDocument: index.html
+        IndexDocument: index.html
+
+  WebS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref WebS3Bucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+            - s3:GetObject
+            Effect: Allow
+            Resource: !Sub 
+              - 'arn:aws:s3:::${BucketName}/*'
+              - BucketName: !Ref WebS3Bucket
+            Principal: '*'
+
+  WebCloudFrontCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties: 
+      CachePolicyConfig: 
+        DefaultTTL: 300 # 86400
+        MaxTTL: 300 # 31536000
+        MinTTL: 300
+        Name: web-cache-policy
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig: 
+            CookieBehavior: none
+          EnableAcceptEncodingBrotli: false
+          EnableAcceptEncodingGzip: false
+          HeadersConfig: 
+            HeaderBehavior: none
+          QueryStringsConfig: 
+            QueryStringBehavior: none
+
+  WebCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties: 
+      DistributionConfig:
+        Aliases:
+          - awskcug.nikyotech.com
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        DefaultCacheBehavior:
+          CachePolicyId: !Ref WebCloudFrontCachePolicy
+          TargetOriginId: !Ref WebS3Bucket
+          ViewerProtocolPolicy: redirect-to-https
+        Enabled: true
+        Origins:
+          - CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+            DomainName: !Sub
+              - '${BucketName}.s3-website.${AWS::Region}.amazonaws.com'
+              - BucketName: !Ref WebS3Bucket
+            Id: !Ref WebS3Bucket
+            # OriginAccessControlId: !Ref WebOAC
+        ViewerCertificate: 
+          AcmCertificateArn: !Ref WebCertificate
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+
+  WebCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: awskcug.nikyotech.com
+      # DomainValidationOptions:
+      #   - DomainName: awskcug.nikyotech.com
+      #     HostedZoneId: !ImportValue NikkiYodoHostedZoneId
+      # SubjectAlternativeNames: 
+      #   - www.nikyotech.com
+      ValidationMethod: DNS
+  
