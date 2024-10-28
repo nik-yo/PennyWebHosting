@@ -30,6 +30,7 @@ export default function RootLayout({
         <nav className="px-8 md:px-32 lg:px-48 xl:px-64 2xl:px-96 py-4">
           <div className="flex justify-around">
             <Link href="/" className="hover:bg-blue-500 hover:text-white px-4 py-1 rounded">Home</Link>
+            <Link href="/events" className="hover:bg-blue-500 hover:text-white px-4 py-1 rounded">Events</Link>
             <Link href="https://www.meetup.com/awskcug/" className="hover:bg-blue-500 hover:text-white px-4 py-1 rounded">Meetup</Link>
             <Link href="https://www.meetup.com/awskcug/members/" className="hover:bg-blue-500 hover:text-white px-4 py-1 rounded">Members</Link>
           </div>          
